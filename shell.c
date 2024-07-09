@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+// #include "unistd.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 void shell_loop(void);
 char *shell_read_line(void);
@@ -19,7 +26,7 @@ void shell_loop(void)
 {
     char *line = NULL;
     char **args = NULL;
-    int status = 0;
+    int status = 1;
 
     do
     {
@@ -27,8 +34,7 @@ void shell_loop(void)
         line = shell_read_line();
         args = shell_line_parse(line);
         status = shell_function(args);
-    } while(status != 1);
-    exit(EXIT_SUCCESS);
+    } while(status);
 }
 
 char *shell_read_line(void)
@@ -48,7 +54,7 @@ char *shell_read_line(void)
         int c = getchar();
         if (c == EOF || c == '\n')
         {
-            buffer[0] = '\0';
+            buffer[i] = '\0';
             return buffer;
         }
         else
@@ -86,6 +92,13 @@ int shell_function(char **tokens)
 {
     if (strcmp(tokens[0], "exit") == 0)
     {
-        return 1;
+        return 0;
+    }
+    else if (strcmp(tokens[0], "cd") == 0)
+    {
+        if (SetCurrentDirectory("/test") == 0)
+        {
+            printf("Directory changed to test folder\n");
+        }
     }
 }
