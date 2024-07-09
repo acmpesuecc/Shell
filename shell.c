@@ -100,6 +100,7 @@ int shell_function(char **tokens)
         }
         else
         {
+            #ifdef _WIN32
             if (SetCurrentDirectory(tokens[1]) != 0)
             {
                 printf("Directory changed to %s folder.\n\n\\%s",tokens[1], tokens[1]);
@@ -109,6 +110,18 @@ int shell_function(char **tokens)
                 printf("Could not move to the given directory.\n");
                 return 1;
             }
+            #else
+            #include <unistd.h>
+            if (chdir(tokens[1]) != 0)
+            {
+                printf("Directory changed to %s folder.\n\n\\%s",tokens[1], tokens[1]);
+            }
+            else
+            {
+                printf("Could not move to the given directory.\n");
+                return 1;
+            }
+            #endif
         }
     }
 }
