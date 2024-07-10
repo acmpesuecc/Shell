@@ -102,10 +102,25 @@ int shell_function(char **tokens)
         {
             printf("shell: expected a directory name after cd\n");
         }
+        else if (strcmp(tokens[1], "..") == 0)
+        {
+            // char *updir = strtok(current_dir, "\\");
+            chdir("..");
+            char *last_slash = strrchr(current_dir, '\\');
+            if (last_slash != NULL)
+            {
+                *last_slash = '\0';
+            }
+            else
+            {
+                strcpy(current_dir, "");
+            }
+        }
         else
         {
             if (chdir(tokens[1]) == 0)
             {
+                printf("Changed directory to %s\n", tokens[1]);
                 if (strlen(current_dir) == 0)
                 {
                     strcpy(current_dir, tokens[1]);
@@ -115,11 +130,6 @@ int shell_function(char **tokens)
                     strcat(current_dir, "\\");
                     strcat(current_dir, tokens[1]);
                 }
-            }
-            else if (strcmp(tokens[2], ".."))
-            {
-                char updir[] = strtok(current_dir, "\\");
-                chdir()
             }
             else
             {
