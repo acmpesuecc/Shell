@@ -1,20 +1,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <windows.h>
-
+#include <unistd.h>
 
 void shell_loop(void);
 char *shell_read_line(void);
 char **shell_line_parse(char *line);
 int shell_function(char **tokens);
 
+char current_dir[1024] = "";
+
 int main(int argc, char **argv)
 {
-    
     shell_loop();
-
-
+    return 0;
 }
 
 void shell_loop(void)
@@ -25,7 +24,7 @@ void shell_loop(void)
 
     do
     {
-        printf(":) ");
+        printf("\\%s:) ", current_dir);
         line = shell_read_line();
         args = shell_line_parse(line);
         status = shell_function(args);
@@ -88,6 +87,11 @@ char **shell_line_parse(char *line)
 
 int shell_function(char **tokens)
 {
+    if (tokens[0] == NULL)
+    {
+        return 1;
+    }
+
     if (strcmp(tokens[0], "bye") == 0)
     {
         return 0;
@@ -96,32 +100,37 @@ int shell_function(char **tokens)
     {
         if (tokens[1] == NULL)
         {
-            printf("shell: expected an directory name after cd\n");
+            printf("shell: expected a directory name after cd\n");
         }
         else
         {
-            #ifdef _WIN32
-            if (SetCurrentDirectory(tokens[1]) != 0)
+            if (chdir(tokens[1]) == 0)
             {
-                printf("Directory changed to %s folder.\n\n\\%s",tokens[1], tokens[1]);
+                if (strlen(current_dir) == 0)
+                {
+                    strcpy(current_dir, tokens[1]);
+                }
+                else
+                {
+                    strcat(current_dir, "\\");
+                    strcat(current_dir, tokens[1]);
+                }
+            }
+            else if (strcmp(tokens[2], ".."))
+            {
+                char updir[] = strtok(current_dir, "\\");
+                chdir()
             }
             else
             {
                 printf("Could not move to the given directory.\n");
-                return 1;
             }
-            #else
-            #include <unistd.h>
-            if (chdir(tokens[1]) != 0)
-            {
-                printf("Directory changed to %s folder.\n\n\\%s",tokens[1], tokens[1]);
-            }
-            else
-            {
-                printf("Could not move to the given directory.\n");
-                return 1;
-            }
-            #endif
         }
+        return 1;
+    }
+    else
+    {
+        printf("shell: command doesn't exist.\n");
+        return 1;
     }
 }
