@@ -2,16 +2,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <sys/types.h>
 
+// Function declarations
 void shell_loop(void);
 char *shell_read_line(void);
 char **shell_line_parse(char *line);
-int shell_function(char **tokens);
+int shell_launch(char **args);
+int shell_execute(char **args);
 
+// Global current directory variable
 char current_dir[1024] = "";
+
+// Built-in shell commands
+int shell_cd(char **args);
+int shell_help(char **args);
+int shell_exit_command(char **args);
 
 int main(int argc, char **argv)
 {
+    printf("\nHello, this is Ameya's basic shell.\n\n");
     shell_loop();
     return 0;
 }
@@ -24,14 +35,15 @@ void shell_loop(void)
 
     do
     {
-        printf("\\%s:) ", current_dir);
+        getcwd(current_dir, sizeof(current_dir)); // Update current directory
+        printf("%s :) ", current_dir);
         line = shell_read_line();
         args = shell_line_parse(line);
-        status = shell_function(args);
+        status = shell_execute(args);
 
         free(line);
         free(args);
-    } while(status);
+    } while (status);
 }
 
 char *shell_read_line(void)
@@ -42,11 +54,11 @@ char *shell_read_line(void)
 
     if (!buffer)
     {
-        fprintf(stderr, "shell: allocation error. Perhaps nothing is entered.\n");
+        fprintf(stderr, "shell: allocation error.\n");
         exit(EXIT_FAILURE);
     }
 
-    while(1)
+    while (1)
     {
         int c = getchar();
         if (c == EOF || c == '\n')
@@ -64,13 +76,14 @@ char *shell_read_line(void)
 
 char **shell_line_parse(char *line)
 {
-    char **tokens = malloc(sizeof(char*) * 64);
-    char *token;
+    int buffer_size = 64;
     int i = 0;
+    char **tokens = malloc(buffer_size * sizeof(char *));
+    char *token;
 
     if (!tokens)
     {
-        printf("shell: allocation error. Perhaps nothing is entered.");
+        fprintf(stderr, "shell: allocation error.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -79,68 +92,105 @@ char **shell_line_parse(char *line)
     {
         tokens[i] = token;
         i++;
+
+        if (i >= buffer_size)
+        {
+            buffer_size += 64;
+            tokens = realloc(tokens, buffer_size * sizeof(char *));
+            if (!tokens)
+            {
+                fprintf(stderr, "shell: allocation error.\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
         token = strtok(NULL, " ");
     }
     tokens[i] = NULL;
     return tokens;
 }
 
-int shell_function(char **tokens)
+int shell_cd(char **args)
 {
-    if (tokens[0] == NULL)
+    if (args[1] == NULL)
     {
-        return 1;
-    }
-
-    if (strcmp(tokens[0], "bye") == 0)
-    {
-        return 0;
-    }
-    else if (strcmp(tokens[0], "cd") == 0)
-    {
-        if (tokens[1] == NULL)
-        {
-            printf("shell: expected a directory name after cd\n");
-        }
-        else if (strcmp(tokens[1], "..") == 0)
-        {
-            // char *updir = strtok(current_dir, "\\");
-            chdir("..");
-            char *last_slash = strrchr(current_dir, '\\');
-            if (last_slash != NULL)
-            {
-                *last_slash = '\0';
-            }
-            else
-            {
-                strcpy(current_dir, "");
-            }
-        }
-        else
-        {
-            if (chdir(tokens[1]) == 0)
-            {
-                printf("Changed directory to %s\n", tokens[1]);
-                if (strlen(current_dir) == 0)
-                {
-                    strcpy(current_dir, tokens[1]);
-                }
-                else
-                {
-                    strcat(current_dir, "\\");
-                    strcat(current_dir, tokens[1]);
-                }
-            }
-            else
-            {
-                printf("Could not move to the given directory.\n");
-            }
-        }
-        return 1;
+        fprintf(stderr, "shell: expected argument to \"cd\"\n");
     }
     else
     {
-        printf("shell: command doesn't exist.\n");
-        return 1;
+        if (chdir(args[1]) != 0)
+        {
+            perror("shell");
+        }
     }
+    return 1;
+}
+
+int shell_help(char **args)
+{
+    printf("Ameya's Shell\n");
+    printf("The following are built-in:\n");
+
+    printf("  cd\n");
+    printf("  help\n");
+    printf("  bye\n");
+
+    return 1;
+}
+
+int shell_exit_command(char **args)
+{
+    return 0;
+}
+
+int shell_execute(char **args)
+{
+    if (args[0] == NULL)
+    {
+        return 1; // An empty command was entered.
+    }
+
+    if (strcmp(args[0], "cd") == 0)
+    {
+        return shell_cd(args);
+    }
+    else if (strcmp(args[0], "help") == 0)
+    {
+        return shell_help(args);
+    }
+    else if (strcmp(args[0], "bye") == 0)
+    {
+        return shell_exit_command(args);
+    }
+
+    return shell_launch(args);
+}
+
+int shell_launch(char **args)
+{
+    pid_t pid, wpid;
+    int status;
+
+    pid = fork();
+    if (pid == 0)
+    {
+        if (execvp(args[0], args) == -1)
+        {
+            perror("shell");
+        }
+        exit(EXIT_FAILURE);
+    }
+    else if (pid < 0)
+    {
+        perror("shell");
+    }
+    else
+    {
+        do
+        {
+            wpid = waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+
+    return 1;
 }
