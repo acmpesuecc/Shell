@@ -16,4 +16,4 @@ Welcome to Ameya's Basic Shell, a simple command-line shell written in C. This s
 
 7) exit or bye: Exit the shell.
 
-man <command>: Display usage and description for the specified command.
+8) man <command>: Display usage and description for the specified command.
