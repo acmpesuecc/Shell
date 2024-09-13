@@ -3,42 +3,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include "shell.h"
+#include <dirent.h>
 
-#define NUM_BUILTINS 5
-
-// Function declarations
-void shell_loop(void);
-char *shell_read_line(void);
-char **shell_line_parse(char *line);
-int shell_launch(char **args);
-int shell_execute(char **args);
-void shell_handle_error(const char *message);
-int shell_man(char **args);
-
-// Global current directory variable
 char current_dir[1024] = "";
-
-// Built-in shell commands
-int shell_cd(char **args);
-int shell_help(char **args);
-int shell_pwd(char **args);
-int shell_echo(char **args);
-int shell_exit_command(char **args);
-
-// Command structure for built-in commands
-typedef struct {
-    char *name;
-    int (*func)(char **args);
-    char *description;
-} builtin_command;
 
 builtin_command builtins[NUM_BUILTINS] = {
     {"cd", shell_cd, "Change the current directory. Usage: cd <directory>"},
     {"help", shell_help, "Display this help message. Usage: help"},
     {"pwd", shell_pwd, "Print the current working directory. Usage: pwd"},
     {"echo", shell_echo, "Print arguments to the console. Usage: echo <text>"},
-    {"bye", shell_exit_command, "Exit the shell. Usage: bye"}
+    {"bye", shell_exit_command, "Exit the shell. Usage: bye"},
+    {"exit", shell_exit_command, "Exit the shell. Usage: exit"},
+    {"ls", shell_list, "List the contents in directory. Usage: ls <directory>"}
 };
 
 int main(int argc, char **argv)
@@ -65,7 +44,7 @@ void shell_loop(void)
         free(line);
         free(args);
     } while (status);
-}
+};
 
 char *shell_read_line(void)
 {
@@ -173,8 +152,43 @@ int shell_help(char **args)
     {
         printf("  %s - %s\n", builtins[i].name, builtins[i].description);
     }
-
     return 1;
+}
+
+int shell_list(char** args)
+{
+    char* directory = args[1] ? args[1] : ".";
+    DIR *dir = opendir(directory);
+    
+    if (dir == NULL)
+    {
+        perror("apksh: ");
+        return 1;
+    }
+    
+    struct dirent *entry;
+    
+    while ((entry = readdir(dir)) != NULL)
+    {
+        printf("%s\n", entry->d_name);
+    }
+    closedir(dir);
+    return 1;
+}
+
+int shell_make_dir(char** args)
+{
+  if (args[1] == NULL)
+  {
+    fprintf(stderr, "apksh: No arguement given. Usage: mkdir <directory>");
+    return 1;
+  }
+
+  if (mkdir(args[1], 0755) != 0)
+  {
+    perror("apksh");
+  }
+  return 1;
 }
 
 int shell_pwd(char **args)
