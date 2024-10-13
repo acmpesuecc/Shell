@@ -14,22 +14,14 @@ Welcome to **Ameya's Basic Shell (apksh)**, a simple command-line shell written 
   - `exit` or `bye`: Exit the shell.
   - `man <command>`: Display usage and description for the specified command.
   
-## Installation
-
-
-To compile and run the shell, follow these steps:
-```
-gcc -o apksh shell.c
-```
-
-
+## Usage
 
 To run the shell locally:
 1) Clone the repo
-```
- git clone <repository-url>
- cd apksh
-```
+  ```
+   git clone <repository-url>
+   cd apksh
+  ```
 
 2) Compile the source code
    ```
