@@ -14,14 +14,28 @@ Welcome to **Ameya's Basic Shell (apksh)**, a simple command-line shell written 
   - `exit` or `bye`: Exit the shell.
   - `man <command>`: Display usage and description for the specified command.
   
-- **Interactive Shell**: Provides a user-friendly command-line interface for executing commands.
-- **Dynamic Memory Management**: Allocates memory dynamically to handle user input and command execution.
-
 ## Installation
 
-To compile and run Ameya's Basic Shell, follow these steps:
 
-1. **Clone the Repository** (if applicable):
-   ```bash
-   git clone <repository-url>
-   cd apksh
+To compile and run the shell, follow these steps:
+```
+gcc -o apksh shell.c
+```
+
+
+
+To run the shell locally:
+1) Clone the repo
+```
+ git clone <repository-url>
+ cd apksh
+```
+
+2) Compile the source code
+   ```
+   gcc -o apksh shell.c
+   ```
+3) Run the shell
+   ```
+   ./apksh
+   ```
