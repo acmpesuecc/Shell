@@ -31,3 +31,5 @@ To run the shell locally:
    ```
    ./apksh
    ```
+### Maintainer
+[Ameya Khanzode](https://github.com/AmeyaKhanzode)
