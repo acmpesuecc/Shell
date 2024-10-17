@@ -31,5 +31,9 @@ To run the shell locally:
    ```
    ./apksh
    ```
+
+# Note
+If you are using a windows pc, you will have to first install WSL on your system and download an Ubuntu distro (or any other distro). Clone the repo in the WSL and run it in the linux environment
+
 ### Maintainer
 [Ameya Khanzode](https://github.com/AmeyaKhanzode)
