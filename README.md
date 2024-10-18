@@ -20,7 +20,7 @@ To run the shell locally:
 1) Clone the repo
   ```
    git clone <repository-url>
-   cd apksh
+   cd Shell
   ```
 
 2) Compile the source code
