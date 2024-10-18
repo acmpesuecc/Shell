@@ -1,3 +1,7 @@
+
+
+// shell.c
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -45,7 +49,7 @@ void shell_loop(void)
         free(line);
         free(args);
     } while (status);
-};
+}
 
 char *shell_read_line(void)
 {
@@ -179,17 +183,17 @@ int shell_list(char** args)
 
 int shell_make_dir(char** args)
 {
-  if (args[1] == NULL)
-  {
-    fprintf(stderr, "apksh: No arguement given. Usage: mkdir <directory>");
-    return 1;
-  }
+    if (args[1] == NULL)
+    {
+        fprintf(stderr, "apksh: No argument given. Usage: mkdir <directory>");
+        return 1;
+    }
 
-  if (mkdir(args[1], 0755) != 0)
-  {
-    perror("apksh");
-  }
-  return 1;
+    if (mkdir(args[1], 0755) != 0)
+    {
+        perror("apksh");
+    }
+    return 1;
 }
 
 int shell_pwd(char** args)
@@ -270,35 +274,6 @@ int shell_execute(char** args)
     }
     
     printf("apksh: '%s' is not a recognized built-in command.\n", args[0]);
-    return 1;
-}
-
-int shell_launch(char** args)
-{
-    pid_t pid, wpid;
-    int status;
-
-    pid = fork();
-    if (pid == 0)
-    {
-        if (execvp(args[0], args) == -1)                                     //to make it such that external commands work if they dont exist in the builtin commands of apksh
-        {
-            fprintf(stderr, "apksh: Such a command doesn't exist.\n");
-        }
-        exit(EXIT_FAILURE);
-    }
-    else if (pid < 0)
-    {
-        perror("apksh");
-    }
-    else
-    {
-        do
-        {
-            wpid = waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    }
-
     return 1;
 }
 
