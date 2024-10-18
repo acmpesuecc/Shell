@@ -20,7 +20,7 @@ To run the shell locally:
 1) Clone the repo
   ```
    git clone <repository-url>
-   cd apksh
+   cd Shell
   ```
 
 2) Compile the source code
@@ -31,5 +31,9 @@ To run the shell locally:
    ```
    ./apksh
    ```
+
+# Note
+If you are using a windows pc, you will have to first install WSL on your system and download an Ubuntu distro (or any other distro). Clone the repo in the WSL and run it in the linux environment
+
 ### Maintainer
 [Ameya Khanzode](https://github.com/AmeyaKhanzode)
