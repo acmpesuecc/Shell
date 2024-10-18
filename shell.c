@@ -1,18 +1,12 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include "shell.h"
-#include <dirent.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <wordexp.h>
 #include <signal.h>
 
-
 char current_dir[1024] = "";
+char history_file[1024];
 void sigtstp_handler(int);
-int shell_roll_wrapper(char **);
 
 builtin_command builtins[NUM_BUILTINS] = {
     {"cd", shell_cd, "Change the current directory. Usage: cd <directory>"},
@@ -25,12 +19,37 @@ builtin_command builtins[NUM_BUILTINS] = {
     {"roll", shell_roll_wrapper, "Rolls the terminal. Usage: roll"}
 };
 
+// ... (previous code remains the same)
+
 int main(int argc, char** argv)
 {
     printf("\nHello, this is Ameya's basic shell (apksh).\n\n");
     signal(SIGTSTP, sigtstp_handler);
+    initialize_readline();
     shell_loop();
+    cleanup_readline();
     return 0;
+}
+
+void initialize_readline(void)
+{
+    rl_bind_key('\t', rl_complete);
+    
+    // Set up history file path
+    char* home = getenv("HOME");
+    if (home != NULL) {
+        snprintf(history_file, sizeof(history_file), "%s/.apksh_history", home);
+    } else {
+        strcpy(history_file, ".apksh_history");
+    }
+    
+    using_history();
+    read_history(history_file);
+}
+
+void cleanup_readline(void)
+{
+    write_history(history_file);
 }
 
 void shell_loop(void)
@@ -42,52 +61,42 @@ void shell_loop(void)
     do
     {
         getcwd(current_dir, sizeof(current_dir)); // Update current directory
-        printf("%s :) ", current_dir);
-        line = shell_read_line();
+        char prompt[1024];
+        size_t prompt_max = sizeof(prompt) - 1; // Reserve space for null terminator
+        size_t dir_length = strlen(current_dir);
+        const char *suffix = " :) ";
+        size_t suffix_length = strlen(suffix);
+        
+        if (dir_length + suffix_length > prompt_max) {
+            // If the directory path is too long, truncate it
+            size_t avail_space = prompt_max - suffix_length - 3; // 3 for "..."
+            snprintf(prompt, avail_space + 1, "...%s", current_dir + dir_length - avail_space);
+            strncat(prompt, suffix, suffix_length);
+        } else {
+            snprintf(prompt, dir_length + 1, "%s", current_dir);
+            strncat(prompt, suffix, suffix_length);
+        }
+        
+        line = readline(prompt);
+
+        if (line == NULL) {
+            printf("\n");
+            break; // Exit on EOF (Ctrl+D)
+        }
+
+        if (strlen(line) > 0) {
+            add_history(line);
+        }
+
         args = shell_line_parse(line);
         status = shell_execute(args);
 
         free(line);
         free(args);
     } while (status);
-};
-
-char *shell_read_line(void)
-{
-    int buffer_size = 1024;
-    int i = 0;
-    char *buffer = malloc(sizeof(char) * buffer_size);
-
-    if (!buffer)
-    {
-        shell_handle_error("allocation error");
-    }
-
-    while (1)
-    {
-        int c = getchar();
-        if (c == EOF || c == '\n')
-        {
-            buffer[i] = '\0';
-            return buffer;
-        }
-        else
-        {
-            buffer[i] = c;
-        }
-        i++;
-
-        if (i >= buffer_size)
-        {
-            buffer_size += 1024;
-            buffer = realloc(buffer, buffer_size);
-            if (!buffer)
-            {
-                shell_handle_error("allocation error");
-            }
-        }
-    }
 }
+
+
 
 char **shell_line_parse(char* line)
 {
@@ -161,14 +170,27 @@ int shell_help(char** args)
     return 1;
 }
 
+
+
 int shell_list(char** args)
 {
     char* directory = args[1] ? args[1] : ".";
+    
+    // Handle tilde expansion
+    wordexp_t exp_result;
+    if (wordexp(directory, &exp_result, 0) != 0) {
+        fprintf(stderr, "apksh: Error expanding path\n");
+        return 1;
+    }
+    
+    directory = exp_result.we_wordv[0];
+    
     DIR *dir = opendir(directory);
     
     if (dir == NULL)
     {
-        perror("apksh: ");
+        perror("apksh");
+        wordfree(&exp_result);
         return 1;
     }
     
@@ -179,22 +201,24 @@ int shell_list(char** args)
         printf("%s\n", entry->d_name);
     }
     closedir(dir);
+    wordfree(&exp_result);
     return 1;
 }
 
+
 int shell_make_dir(char** args)
 {
-  if (args[1] == NULL)
-  {
-    fprintf(stderr, "apksh: No arguement given. Usage: mkdir <directory>");
-    return 1;
-  }
+    if (args[1] == NULL)
+    {
+        fprintf(stderr, "apksh: No argument given. Usage: mkdir <directory>");
+        return 1;
+    }
 
-  if (mkdir(args[1], 0755) != 0)
-  {
-    perror("apksh");
-  }
-  return 1;
+    if (mkdir(args[1], 0755) != 0)
+    {
+        perror("apksh");
+    }
+    return 1;
 }
 
 int shell_pwd(char** args)
@@ -275,35 +299,6 @@ int shell_execute(char** args)
     }
     
     printf("apksh: '%s' is not a recognized built-in command.\n", args[0]);
-    return 1;
-}
-
-int shell_launch(char** args)
-{
-    pid_t pid, wpid;
-    int status;
-
-    pid = fork();
-    if (pid == 0)
-    {
-        if (execvp(args[0], args) == -1)                                     //to make it such that external commands work if they dont exist in the builtin commands of apksh
-        {
-            fprintf(stderr, "apksh: Such a command doesn't exist.\n");
-        }
-        exit(EXIT_FAILURE);
-    }
-    else if (pid < 0)
-    {
-        perror("apksh");
-    }
-    else
-    {
-        do
-        {
-            wpid = waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-    }
-
     return 1;
 }
 
