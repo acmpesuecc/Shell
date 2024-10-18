@@ -270,7 +270,7 @@ int shell_execute(char** args)
     }
     
     printf("apksh: '%s' is not a recognized built-in command.\n", args[0]);
-    return shell_launch(args);
+    return 1;
 }
 
 int shell_launch(char** args)

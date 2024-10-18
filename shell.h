@@ -2,7 +2,7 @@
 #define FUNCTIONS_H
 
 
-#define NUM_BUILTINS 7
+#define NUM_BUILTINS 8
 void shell_loop(void);
 char *shell_read_line(void);
 char **shell_line_parse(char* line);
