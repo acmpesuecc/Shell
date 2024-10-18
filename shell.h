@@ -1,8 +1,10 @@
-#ifndef FUNCTIONS_H
-#define FUNCTIONS_H
+// shell.h
 
+#ifndef SHELL_H
+#define SHELL_H
 
 #define NUM_BUILTINS 8
+
 void shell_loop(void);
 char *shell_read_line(void);
 char **shell_line_parse(char* line);
@@ -22,6 +24,7 @@ int shell_help(char** args);
 int shell_pwd(char** args);
 int shell_echo(char** args);
 int shell_exit_command(char** args);
+int shell_roll_wrapper(char** args);
 
 // Command structure for built-in commands
 typedef struct {
