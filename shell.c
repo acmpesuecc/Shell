@@ -273,34 +273,34 @@ int shell_execute(char** args)
     return 1;
 }
 
-// int shell_launch(char** args)
-// {
-//     pid_t pid, wpid;
-//     int status;
+int shell_launch(char** args)
+{
+    pid_t pid, wpid;
+    int status;
 
-//     pid = fork();
-//     if (pid == 0)
-//     {
-//         if (execvp(args[0], args) == -1)                                     //to make it such that external commands work if they dont exist in the builtin commands of apksh
-//         {
-//             fprintf(stderr, "apksh: Such a command doesn't exist.\n");
-//         }
-//         exit(EXIT_FAILURE);
-//     }
-//     else if (pid < 0)
-//     {
-//         perror("apksh");
-//     }
-//     else
-//     {
-//         do
-//         {
-//             wpid = waitpid(pid, &status, WUNTRACED);
-//         } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-//     }
+    pid = fork();
+    if (pid == 0)
+    {
+        if (execvp(args[0], args) == -1)                                     //to make it such that external commands work if they dont exist in the builtin commands of apksh
+        {
+            fprintf(stderr, "apksh: Such a command doesn't exist.\n");
+        }
+        exit(EXIT_FAILURE);
+    }
+    else if (pid < 0)
+    {
+        perror("apksh");
+    }
+    else
+    {
+        do
+        {
+            wpid = waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
 
-//     return 1;
-// }
+    return 1;
+}
 
 int shell_roll(void)
 {
