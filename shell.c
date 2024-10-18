@@ -43,9 +43,9 @@ void shell_loop(void)
         status = shell_execute(args);
 
         free(line);
-        free(args);
+        free(args);  // Free the args array after execution.
     } while (status);
-};
+}
 
 char *shell_read_line(void)
 {
@@ -99,7 +99,7 @@ char **shell_line_parse(char* line)
     token = strtok(line, " ");
     while (token != NULL)
     {
-        tokens[i] = strdup(token);
+        tokens[i] = strdup(token);  // strdup allocates memory for each token
         if (!tokens[i])
         {
             shell_handle_error("allocation error");
@@ -265,10 +265,17 @@ int shell_execute(char** args)
     {
         if (strcmp(args[0], builtins[i].name) == 0)
         {
-            return builtins[i].func(args);
+            int result = builtins[i].func(args);
+            
+            // Freeing args in shell_loop after execution
+            for (int j = 0; args[j] != NULL; j++)
+            {
+                free(args[j]);  // Free each token inside the args array.
+            }
+            return result;
         }
     }
-    
+
     printf("apksh: '%s' is not a recognized built-in command.\n", args[0]);
     return 1;
 }
