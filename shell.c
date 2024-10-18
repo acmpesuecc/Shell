@@ -7,8 +7,12 @@
 #include <sys/types.h>
 #include "shell.h"
 #include <dirent.h>
+#include <signal.h>
+
 
 char current_dir[1024] = "";
+void sigtstp_handler(int);
+int shell_roll_wrapper(char **);
 
 builtin_command builtins[NUM_BUILTINS] = {
     {"cd", shell_cd, "Change the current directory. Usage: cd <directory>"},
@@ -24,6 +28,7 @@ builtin_command builtins[NUM_BUILTINS] = {
 int main(int argc, char** argv)
 {
     printf("\nHello, this is Ameya's basic shell (apksh).\n\n");
+    signal(SIGTSTP, sigtstp_handler);
     shell_loop();
     return 0;
 }
@@ -311,4 +316,9 @@ int shell_roll(void)
 int shell_roll_wrapper(char** args)
 {
     return shell_roll();
+}
+
+void sigtstp_handler(int sig) {
+    printf("\nExiting the shell. Goodbye!\n");
+    exit(0); 
 }
