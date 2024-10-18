@@ -2,9 +2,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <wordexp.h>
+#include <signal.h>
 
 char current_dir[1024] = "";
 char history_file[1024];
+void signal_handler(int);
 
 builtin_command builtins[NUM_BUILTINS] = {
     {"cd", shell_cd, "Change the current directory. Usage: cd <directory>"},
@@ -23,6 +25,7 @@ int main(int argc, char** argv)
 {
     printf("\nHello, this is Ameya's basic shell (apksh).\n\n");
     initialize_readline();
+    signal(SIGTSTP, signal_handler);
     shell_loop();
     cleanup_readline();
     return 0;
@@ -305,7 +308,10 @@ int shell_roll(void)
     return 1;
 }
 
-int shell_roll_wrapper(char** args)
-{
+int shell_roll_wrapper(char** args){
     return shell_roll();
+}
+
+void signal_handler(int sig){
+    exit(0);
 }
